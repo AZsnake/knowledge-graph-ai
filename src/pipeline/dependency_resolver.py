@@ -93,6 +93,7 @@ class DependencyResolver:
 
         task = task_map.get(task_id)
         if not task:
+            self.logger.warning(f"依赖任务 '{task_id}' 不在任务列表中，视为深度0")
             visiting.remove(task_id)
             return 0
 
