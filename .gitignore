@@ -26,8 +26,8 @@ build/
 .DS_Store
 Thumbs.db
 
-# Claude Code 本地配置
-.claude/settings.local.json
+# Claude Code
+.claude/
 
 # 输出与临时文件（可选保留，按需取消注释）
 # output/
