@@ -4,20 +4,27 @@ echo Knowledge Graph AI Assistant
 echo ====================================
 echo.
 
-REM Check Python installation
-python --version >nul 2>&1
-if errorlevel 1 (
-    echo Error: Python not found. Please install Python 3.8+
-    pause
-    exit /b 1
+REM Find the Python that owns the streamlit on PATH
+for /f "delims=" %%S in ('where streamlit 2^>nul') do (
+    set STREAMLIT_EXE=%%S
+    goto :found
 )
+echo Error: streamlit not found. Run: pip install streamlit
+pause
+exit /b 1
 
-REM Check dependencies
+:found
+REM Derive the Python executable from streamlit's location
+for %%F in ("%STREAMLIT_EXE%") do set STREAMLIT_DIR=%%~dpF
+set PYTHON_EXE=%STREAMLIT_DIR%python.exe
+if not exist "%PYTHON_EXE%" set PYTHON_EXE=python
+
+REM Install / verify all dependencies using the same Python
 echo Checking dependencies...
-pip show streamlit >nul 2>&1
+"%PYTHON_EXE%" -m pip show pyvis >nul 2>&1
 if errorlevel 1 (
     echo Installing dependencies...
-    pip install streamlit pyvis networkx openai python-dotenv
+    "%PYTHON_EXE%" -m pip install -r requirements.txt
 )
 
 REM Start application
