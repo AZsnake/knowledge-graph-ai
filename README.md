@@ -183,12 +183,22 @@ material/
 
 #### 方式一：使用 Streamlit 应用（推荐）
 
+`start_app.bat` and `start_app.sh` are **symmetric launcher scripts**. Both perform the same steps:
+
+1. Detect available Python (3.8+)
+2. Install dependencies on first run (`requirements.txt`)
+3. Check whether `.env` exists and show a reminder
+4. Launch `streamlit_app.py`
+
 **Windows:**
 ```bash
-# 双击运行
+# Double-click to run
 start_app.bat
 
-# 或命令行运行
+# Or run from command line
+.\start_app.bat
+
+# Or run directly
 streamlit run streamlit_app.py
 ```
 
@@ -197,7 +207,7 @@ streamlit run streamlit_app.py
 chmod +x start_app.sh
 ./start_app.sh
 
-# 或直接运行
+# Or run directly
 streamlit run streamlit_app.py
 ```
 

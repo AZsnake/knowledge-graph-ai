@@ -378,7 +378,7 @@ def page_pipeline():
     st.header("🔄 知识图谱提取管线")
 
     if not API_KEY:
-        st.error("未配置 DEEPSEEK_API_KEY，请在项目根目录创建 `.env` 文件并填入 API Key。")
+        st.error("未配置 DEEPSEEK_API_KEY/SJTU_API_KEY，请在项目根目录创建 `.env` 文件并填入 API Key。")
         return
 
     # 配置参数
