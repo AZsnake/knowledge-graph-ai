@@ -1,6 +1,6 @@
 # 知识图谱 AI 助手
 
-基于 LLM（DeepSeek）的知识图谱自动构建与可视化平台，采用 **Plan-Generate-Evaluate 三阶段管线架构**，从数学教材中自动提取知识节点与概念关系，生成可交互的知识图谱。
+基于 LLM（DeepSeek / SJTU 致远一号）的知识图谱自动构建与可视化平台，采用 **Plan-Generate-Evaluate 三阶段管线架构**，从数学教材中自动提取知识节点与概念关系，生成可交互的知识图谱。
 
 ---
 
@@ -57,7 +57,7 @@
 | 功能模块 | 说明 |
 |---------|------|
 | **Pipeline 管线** | Plan-Generate-Evaluate 三阶段串行处理，自动化程度高 |
-| **Streamlit 应用** | 全新的 Streamlit 交互界面，集成管线、可视化、编辑和 AI 助手 |
+| **Streamlit 应用** | 交互界面，集成管线、可视化、编辑和 AI 助手 |
 | **文本清洗** | 将原始 Markdown/TeX 教材按章节拆分，调用 LLM 提炼主干内容 |
 | **节点提取** | 基于规划任务，智能提取定义、定理、实例等知识节点 |
 | **关系提取** | 两阶段策略：骨架关系（章节关联矩阵）+ 动态修复（孤立节点） |
@@ -65,15 +65,15 @@
 | **工具调用** | 支持 Tool Calling，动态查询已有知识和教材内容 |
 | **可视化编辑** | pyvis 交互式图谱可视化，支持节点/关系的增删改 |
 | **AI 助手** | 通过自然语言智能添加节点/关系，自动补全关系信息 |
+| **多 Provider** | 支持 DeepSeek 官方 API 与 SJTU 致远一号，可通过 `.env` 切换 |
 
 ---
 
 ## 目录结构
 
 ```
-知识图谱 AI 助手/
+knowledge-graph-ai/
 ├── streamlit_app.py        # Streamlit 应用入口（主程序，推荐）
-├── app.py                  # 旧版 Streamlit 应用（已废弃）
 ├── show.py                 # 知识图谱 HTML 可视化渲染器
 ├── start_app.bat           # Windows 启动脚本
 ├── start_app.sh            # macOS/Linux 启动脚本
@@ -82,43 +82,53 @@
 ├── .env.example            # 密钥配置模板
 │
 ├── scripts/                # 脚本目录
-│   ├── run_pipeline.py     # 管线流程脚本
-│   └── config.py           # 配置管理
+│   ├── run_pipeline.py                 # 管线流程脚本
+│   ├── config.py                       # 配置管理（API Key、路径）
+│   ├── generate_topic_html.py          # 生成单主题 HTML 可视化
+│   ├── run_island_integration_once.py  # 孤立节点一次性整合
+│   └── test_full_toc.py                # TOC 提取测试脚本
 │
 ├── src/                    # 源代码目录
 │   ├── agents/             # 智能体模块
-│   │   ├── planning_agent.py       # 规划智能体
-│   │   ├── generation_agent.py     # 生成智能体
-│   │   └── evaluation_agent.py     # 评估智能体
+│   │   ├── base_agent.py               # 智能体抽象基类
+│   │   ├── two_step_planning_agent.py  # 规划智能体（两步规划）
+│   │   ├── generation_agent.py         # 生成智能体
+│   │   ├── evaluation_agent.py         # 评估智能体
+│   │   └── island_integration_agent.py # 孤立节点整合智能体
 │   ├── pipeline/           # 管线模块
-│   │   ├── orchestrator.py         # 管线编排器
-│   │   ├── task_executor.py        # 任务执行器
-│   │   └── dependency_resolver.py  # 依赖解析器
+│   │   ├── orchestrator.py             # 管线编排器
+│   │   ├── task_executor.py            # 任务执行器
+│   │   ├── iteration_manager.py        # 多轮迭代管理器
+│   │   └── dependency_resolver.py      # 依赖解析器
 │   ├── core/               # 核心数据结构
-│   │   ├── result_types.py         # 结果类型定义
-│   │   ├── constants.py            # 常量定义
-│   │   └── exceptions.py           # 异常定义
+│   │   ├── result_types.py             # Node / Relation / TaskStatus 等
+│   │   ├── constants.py                # 常量（层级颜色映射等）
+│   │   └── exceptions.py               # 自定义异常层次
 │   ├── infrastructure/     # 基础设施
-│   │   ├── api_client.py           # API 客户端
-│   │   ├── logger.py               # 日志工具
-│   │   └── conversation_manager.py # 对话管理
+│   │   ├── api_client.py               # OpenAI 兼容 API 客户端
+│   │   ├── conversation_manager.py     # 对话历史管理
+│   │   └── logger.py                   # 日志工具
 │   ├── utils/              # 工具模块
-│   │   ├── json_parser.py          # JSON 解析器
-│   │   ├── section_extractor.py    # 章节提取器
-│   │   └── markdown_section_extractor.py # Markdown 章节提取
-│   └── config/             # 配置模块
-│       ├── prompts.py              # 提示词模板
-│       └── two_step_planning_prompts.py # 两步规划提示词
+│   │   ├── json_parser.py              # JSON 验证与修复
+│   │   ├── section_extractor.py        # 章节提取器（纯文本）
+│   │   ├── markdown_section_extractor.py # Markdown 章节提取
+│   │   ├── unified_section_extractor.py  # 自动检测格式并提取
+│   │   └── section_length_calculator.py  # Token / 长度估算
+│   └── config/             # 配置与提示词
+│       ├── provider_config.py          # 多 Provider 配置（DeepSeek / SJTU）
+│       ├── prompts.py                  # 各智能体系统提示词
+│       └── two_step_planning_prompts.py # 两步规划专用提示词
 │
 ├── material/               # 教材原文与中间产物（按主题分文件夹）
 │   └── <主题>/
-│       ├── <主题>.md             # 原始教材文本（输入）
-│       ├── raw_i.md              # 按章节拆分的原始内容
-│       ├── <主题>_subsection_i.md # LLM 清洗后的章节内容
-│       ├── <主题>_nodes.json     # 提取的知识节点（新格式）
-│       └── <主题>_relations.json # 提取的知识关系（新格式）
+│       ├── <主题>.md                   # 原始教材文本（输入）
+│       ├── raw_i.md                    # 按章节拆分的原始内容
+│       ├── <主题>_subsection_i.md      # LLM 清洗后的章节内容
+│       ├── <主题>_nodes.json           # 提取的知识节点
+│       └── <主题>_relations.json       # 提取的知识关系
 │
-└── output/                 # 可视化输出（HTML 文件）
+├── output/                 # 可视化输出（HTML 文件）
+└── tests/                  # 测试套件
 ```
 
 ---
@@ -133,7 +143,7 @@ pip install -r requirements.txt
 
 ### 2. 配置 API Key
 
-复制模板文件并填入你的 DeepSeek API Key：
+复制模板文件并填入你的 API Key：
 
 ```bash
 # Windows
@@ -143,16 +153,33 @@ copy .env.example .env
 cp .env.example .env
 ```
 
-编辑 `.env` 文件：
+编辑 `.env` 文件，选择 Provider：
 
-```
+```ini
+# 使用 DeepSeek（默认）
+LLM_PROVIDER=deepseek
 DEEPSEEK_API_KEY=your_api_key_here
-DEEPSEEK_API_ENDPOINT=
+DEEPSEEK_API_ENDPOINT=https://api.deepseek.com
+
+# 或使用 SJTU 致远一号（校园网/VPN）
+# LLM_PROVIDER=sjtu_zhiyuan
+# SJTU_API_KEY=your_api_key_here
+# SJTU_API_ENDPOINT=https://models.sjtu.edu.cn/api/v1
 ```
 
 > 前往 [DeepSeek 开放平台](https://platform.deepseek.com/) 获取 API Key。
 
-### 3. 启动应用
+### 3. 准备教材
+
+将教材 Markdown 文件放入对应目录：
+
+```
+material/
+└── 复分析/
+    └── 复分析.md   ← 原始教材文本
+```
+
+### 4. 启动应用
 
 #### 方式一：使用 Streamlit 应用（推荐）
 
@@ -167,10 +194,7 @@ streamlit run streamlit_app.py
 
 **macOS / Linux:**
 ```bash
-# 添加执行权限
 chmod +x start_app.sh
-
-# 运行
 ./start_app.sh
 
 # 或直接运行
@@ -181,6 +205,8 @@ streamlit run streamlit_app.py
 
 #### 方式二：使用管线脚本
 
+修改 `scripts/config.py` 中的 `MATERIAL_NAME` 与 `MATERIAL_FILE`，然后：
+
 ```bash
 python scripts/run_pipeline.py
 ```
@@ -189,17 +215,19 @@ python scripts/run_pipeline.py
 
 ## 使用流程
 
-### 方式一：使用 Streamlit 应用（推荐）
+### 方式一：Streamlit 应用
 
 启动后，在侧边栏选择功能页：
 
 #### 📊 页面 B · 图谱可视化与编辑
 
-注意：可视化要求的文件在 `material` 中，正确示例如下：
+可视化要求 `material/<主题>/` 下存在以下文件：
 
 ```
-material ---- 复分析 ---- 复分析_nodes.json
-                      |--- 复分析_relations.json
+material/
+└── 复分析/
+    ├── 复分析_nodes.json
+    └── 复分析_relations.json
 ```
 
 交互式查看知识图谱：
@@ -231,17 +259,9 @@ material ---- 复分析 ---- 复分析_nodes.json
 
 ---
 
-### 方式二：使用 Pipeline 管线脚本
-
-使用 Python 命令行执行管线脚本：
-
-- 首先修改 `scripts/config.py` 中的 `MATERIAL_NAME` 与 `MATERIAL_FILE` 
-
----
-
 ## 数据格式说明
 
-### 节点格式（新格式）
+### 节点格式
 ```json
 [
   ["集合", {"desc": "由确定的、互不相同的对象组成的整体", "level": 0, "color": "#FF0000"}],
@@ -249,7 +269,7 @@ material ---- 复分析 ---- 复分析_nodes.json
 ]
 ```
 
-### 关系格式（新格式）
+### 关系格式
 ```json
 [
   ["集合", "映射", {"rel": "必要递推", "定理": "映射建立在集合基础上", "color": "#00a5b1"}]
@@ -264,26 +284,21 @@ material ---- 复分析 ---- 复分析_nodes.json
 A: 这是数学教材中公式引用编号的已知问题。建议在预处理阶段手动或用脚本将编号替换为完整公式描述。
 
 **Q: 关系提取后仍有大量孤立节点？**
-A: 可增大「动态修复最大轮数」（默认 5）或降低「关联阈值」（默认 0.7）再次执行步骤 3。
+A: 可增大「动态修复最大轮数」（默认 5）或降低「关联阈值」（默认 0.7）再次执行步骤 3。也可运行 `scripts/run_island_integration_once.py` 进行一次性整合。
 
 **Q: API 调用超时或报错？**
 A: DeepSeek API 在高峰期可能响应较慢，程序已内置重试机制。如频繁超时，可在高级参数中减小 `batch_num` 以降低单次请求复杂度。
 
-**Q: 如何使用 Pipeline 管线？**
-A: 参考「使用流程 - 方式一」章节，使用 `PipelineOrchestrator` 类运行完整管线。
-
-**Q: 新旧数据格式如何转换？**
-A: 使用 `new_Lib/format_utils.py` 中的转换函数，支持单文件迁移和批量转换。
+**Q: 如何切换到 SJTU 致远一号？**
+A: 在 `.env` 中设置 `LLM_PROVIDER=sjtu_zhiyuan` 并填入 `SJTU_API_KEY`，无需修改任何代码。
 
 ---
 
 ## 技术栈
 
-参考环境 `kg_app`
-
-- **前端**：Streamlit（交互界面）、pyvis（图谱可视化）
-- **后端**：Python 3.8+
-- **LLM**：DeepSeek API（deepseek-chat / deepseek-reasoner）
+- **Python** 3.8+
+- **前端**：Streamlit（交互界面）、pyvis（图谱可视化）、streamlit-agraph
+- **LLM**：DeepSeek API（deepseek-chat / deepseek-reasoner）、SJTU 致远一号
 - **图处理**：NetworkX
 - **并发**：ThreadPoolExecutor
 
