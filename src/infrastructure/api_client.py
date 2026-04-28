@@ -6,14 +6,16 @@ API客户端 - 封装API调用，统一错误处理
 from openai import OpenAI
 from typing import List, Dict, Any, Callable
 import time
+import json
 import sys
 import os
 
 # 添加项目路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from src.core.exceptions import APIError
+from src.core.exceptions import APIError, JSONParseError
 from src.core.constants import APIConstants
+from src.infrastructure.logger import Logger
 
 
 class APIClient:
@@ -26,10 +28,19 @@ class APIClient:
         Args:
             api_key: API密钥
             api_endpoint: API端点
+
+        Raises:
+            ValueError: api_key 或 api_endpoint 为空
         """
+        if not api_key or not api_key.strip():
+            raise ValueError("api_key 不能为空")
+        if not api_endpoint or not api_endpoint.strip():
+            raise ValueError("api_endpoint 不能为空")
+
         self.client = OpenAI(api_key=api_key, base_url=api_endpoint)
         self.api_key = api_key
         self.api_endpoint = api_endpoint
+        self.logger = Logger("APIClient")
 
     def call(
         self,
@@ -83,7 +94,7 @@ class APIClient:
                 response = self.client.chat.completions.create(**request_params)
 
                 elapsed_time = time.time() - start_time
-                print(f"[API调用耗时: {elapsed_time:.2f}秒]")
+                self.logger.debug(f"API调用耗时: {elapsed_time:.2f}秒")
                 return response.choices[0].message.content
 
             except Exception as e:
@@ -161,9 +172,14 @@ class APIClient:
 
                 # 执行工具
                 for tool_call in choice.message.tool_calls:
-                    import json
                     tool_name = tool_call.function.name
-                    tool_args = json.loads(tool_call.function.arguments)
+                    try:
+                        tool_args = json.loads(tool_call.function.arguments)
+                    except json.JSONDecodeError as e:
+                        raise JSONParseError(
+                            f"工具参数JSON解析失败 ({tool_name}): {e}",
+                            raw_content=tool_call.function.arguments
+                        )
 
                     try:
                         result = tool_executor(tool_name, **tool_args)

@@ -163,11 +163,11 @@ class TaskExecutor:
                 )
                 futures[future] = task_id
 
-            # 收集结果
+            # 收集结果（单任务超时600秒）
             for future in as_completed(futures):
                 task_id = futures[future]
                 try:
-                    result = future.result()
+                    result = future.result(timeout=600)
                     results[task_id] = result
                 except Exception as e:
                     self.logger.error(f"任务 {task_id} 执行失败: {e}")

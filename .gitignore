@@ -12,6 +12,9 @@ __pycache__/
 venv/
 .venv/
 env/
+*.egg-info/
+dist/
+build/
 
 # IDE
 .idea/
@@ -19,5 +22,16 @@ env/
 *.swp
 *.swo
 
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
+
 # 输出与临时文件（可选保留，按需取消注释）
 # output/
+
+# 教材中间产物（按需取消注释）
+# material/*/raw_*.md
+# material/*/*.backup_*.json

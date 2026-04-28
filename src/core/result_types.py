@@ -63,6 +63,8 @@ class Node:
             raise ValueError(f"Invalid tuple format for Node: {data}")
 
         name, attrs = data[0], data[1]
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError(f"Node name must be a non-empty string, got: {name!r}")
         if not isinstance(attrs, dict):
             raise ValueError(f"Invalid attributes format for Node: {attrs}")
 
@@ -127,6 +129,10 @@ class Relation:
             raise ValueError(f"Invalid tuple format for Relation: {data}")
 
         obj_a, obj_b, attrs = data[0], data[1], data[2]
+        if not isinstance(obj_a, str) or not obj_a.strip():
+            raise ValueError(f"Relation object_a must be a non-empty string, got: {obj_a!r}")
+        if not isinstance(obj_b, str) or not obj_b.strip():
+            raise ValueError(f"Relation object_b must be a non-empty string, got: {obj_b!r}")
         if not isinstance(attrs, dict):
             raise ValueError(f"Invalid attributes format for Relation: {attrs}")
 

@@ -54,7 +54,7 @@ class JSONParser:
         if "```json" in content:
             try:
                 return content.split("```json")[1].split("```")[0].strip()
-            except:
+            except IndexError:
                 pass
 
         if "```" in content:
@@ -62,7 +62,7 @@ class JSONParser:
                 parts = content.split("```")
                 if len(parts) >= 2:
                     return parts[1].strip()
-            except:
+            except IndexError:
                 pass
 
         return content
