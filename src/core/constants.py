@@ -6,12 +6,21 @@
 
 # API相关常量
 class APIConstants:
+    # 模型名称现在由 provider_config 管理
+    # 这里保留作为回退默认值
     DEFAULT_MODEL = "deepseek-chat"
     REASONER_MODEL = "deepseek-reasoner"
     DEFAULT_MAX_TOKENS = 4096
     DEFAULT_TEMPERATURE = 0.7
     MAX_RETRIES = 3
     RETRY_DELAY = 1.0  # 秒
+
+# SJTU 致远一号 API 限制
+SJTU_RATE_LIMIT = {
+    "requests_per_minute": 100,
+    "tokens_per_minute": 100000,
+    "tokens_per_week": 1000000000,
+}
 
 
 # 迭代相关常量

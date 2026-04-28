@@ -28,10 +28,16 @@ import new_Lib.new_prompt as prompt
 import new_Lib as utils
 
 # ─────────────────────────────────────────────
-# 全局配置
+# 全局配置 （多 Provider 支持）
 # ─────────────────────────────────────────────
-API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
-ENDPOINT = os.getenv("DEEPSEEK_API_ENDPOINT", "https://api.deepseek.com")
+
+from src.config.provider_config import get_provider, get_active_model
+
+_provider = get_provider()
+API_KEY = _provider.get_api_key() or os.getenv("DEEPSEEK_API_KEY", "")
+ENDPOINT = _provider.get_endpoint()
+ACTIVE_MODEL = get_active_model()
+PROVIDER_NAME = _provider.name
 
 PIPELINE_DEFAULTS = {
     "threshold": 0.7,
@@ -578,7 +584,7 @@ def page_generate():
     st.caption("依次执行四个步骤，将 Markdown 教材自动转换为知识图谱 JSON 文件。")
 
     if not API_KEY:
-        st.error("未配置 DEEPSEEK_API_KEY，请在项目根目录创建 `.env` 文件并填入 API Key。")
+        st.error(f"未配置 API Key。当前 Provider: {PROVIDER_NAME}，请在项目根目录创建 `.env` 文件并填入 API Key。")
         return
 
     # ── 全局配置 ──
@@ -802,7 +808,7 @@ def page_editor():
     st.caption("交互式查看知识图谱，支持节点/关系的增删改，以及 AI 智能补全空白关系。")
 
     if not API_KEY:
-        st.warning("未配置 DEEPSEEK_API_KEY，AI 补全功能将不可用。")
+        st.warning(f"未配置 API Key（Provider: {PROVIDER_NAME}），AI 补全功能将不可用。")
 
     try:
         from streamlit_agraph import agraph, Node, Edge, Config

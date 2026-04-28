@@ -39,11 +39,16 @@ def import_modules():
 import_modules()
 
 # ============================================================================
-# 配置
+# 配置 （多 Provider 支持）
 # ============================================================================
 
-API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
-API_ENDPOINT = os.getenv("DEEPSEEK_API_ENDPOINT", "https://api.deepseek.com")
+from src.config.provider_config import get_provider, get_active_model
+
+_provider = get_provider()
+API_KEY = _provider.get_api_key() or os.getenv("DEEPSEEK_API_KEY", "")
+API_ENDPOINT = _provider.get_endpoint()
+ACTIVE_MODEL = get_active_model()
+PROVIDER_NAME = _provider.name
 
 # 关系颜色映射
 REL_COLORS = {
