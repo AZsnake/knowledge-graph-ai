@@ -139,21 +139,6 @@ MAX_ITERATIONS = 3
 MAX_WORKERS = 4
 
 # ============================================================================
-# 路径配置
-# ============================================================================
-# 项目根目录
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# 输出目录
-OUTPUT_DIR = os.path.join(PROJECT_ROOT, "output")
-
-# 检查点目录
-CHECKPOINT_DIR = os.path.join(PROJECT_ROOT, "checkpoints")
-
-# 日志目录
-LOG_DIR = os.path.join(PROJECT_ROOT, "logs")
-
-# ============================================================================
 # 输出配置
 # ============================================================================
 # 节点输出文件名
