@@ -21,13 +21,14 @@ from src.infrastructure.logger import Logger
 class APIClient:
     """API客户端 - 封装API调用"""
 
-    def __init__(self, api_key: str, api_endpoint: str):
+    def __init__(self, api_key: str, api_endpoint: str, model: str = None):
         """
         初始化API客户端
 
         Args:
             api_key: API密钥
             api_endpoint: API端点
+            model: 默认模型名称（覆盖 APIConstants.DEFAULT_MODEL）
 
         Raises:
             ValueError: api_key 或 api_endpoint 为空
@@ -37,9 +38,10 @@ class APIClient:
         if not api_endpoint or not api_endpoint.strip():
             raise ValueError("api_endpoint 不能为空")
 
-        self.client = OpenAI(api_key=api_key, base_url=api_endpoint)
+        self.client = OpenAI(api_key=api_key, base_url=api_endpoint, timeout=120.0)
         self.api_key = api_key
         self.api_endpoint = api_endpoint
+        self.default_model = model or APIConstants.DEFAULT_MODEL
         self.logger = Logger("APIClient")
 
     def call(
@@ -68,7 +70,7 @@ class APIClient:
         Raises:
             APIError: API调用失败
         """
-        model = model or APIConstants.DEFAULT_MODEL
+        model = model or self.default_model
         max_tokens = max_tokens or APIConstants.DEFAULT_MAX_TOKENS
         temperature = temperature or APIConstants.DEFAULT_TEMPERATURE
 
@@ -135,7 +137,7 @@ class APIClient:
         while iteration < max_iterations:
             # 调用API
             response = self.client.chat.completions.create(
-                model=model or APIConstants.DEFAULT_MODEL,
+                model=model or self.default_model,
                 messages=messages,
                 tools=tools,
                 tool_choice="auto",

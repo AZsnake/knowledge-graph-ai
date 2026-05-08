@@ -472,18 +472,27 @@ def run_pipeline_process(material_name: str, material_path: str,
         orchestrator = PipelineOrchestrator(
             API_KEY,
             API_ENDPOINT,
-            material_text=material_text
+            material_text=material_text,
+            model=ACTIVE_MODEL,
         )
 
         # 运行管线
-        update_progress(0.5, "正在运行管线...")
+        update_progress(0.5, f"正在运行管线（模型: {ACTIVE_MODEL}）...")
         material_toc = "\n".join(sections)
+
+        pipeline_log_lines: list = []
+        pipeline_log_box = st.empty()
+
+        def pipeline_log_callback(msg: str):
+            pipeline_log_lines.append(msg)
+            pipeline_log_box.code("\n".join(pipeline_log_lines[-30:]), language=None)
 
         nodes, relations = orchestrator.run(
             material_toc,
             section_lengths=section_lengths,
             max_iterations=max_iterations,
-            max_workers=max_workers
+            max_workers=max_workers,
+            progress_callback=pipeline_log_callback,
         )
 
         # 保存结果
