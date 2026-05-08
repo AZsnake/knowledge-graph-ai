@@ -126,7 +126,6 @@ class TwoStepPlanningAgent(BaseAgent):
             PLANNING_STEP1_SYSTEM_PROMPT,
             PLANNING_STEP1_USER_TEMPLATE
         )
-        from src.core.constants import APIConstants
 
         # 初始化
         batch_agent.initialize()
@@ -163,7 +162,7 @@ class TwoStepPlanningAgent(BaseAgent):
         batch_agent.conversation_manager.add_user_message(user_message)
 
         # 调用 API
-        response = batch_agent._call_api(model=APIConstants.DEFAULT_MODEL, json_mode=True)
+        response = batch_agent._call_api(json_mode=True)
 
         batch_agent.conversation_manager.add_assistant_message(response)
 
@@ -643,13 +642,11 @@ class TwoStepPlanningAgent(BaseAgent):
         agent: Optional["TwoStepPlanningAgent"] = None
     ) -> List[Dict]:
         """执行第二步单次 API 调用并返回跨章节任务"""
-        from src.core.constants import APIConstants
-
         caller = agent or self
         user_message = self._build_step2_user_message(section_groups, existing_subtasks)
         caller.conversation_manager.add_user_message(user_message)
 
-        response = caller._call_api(model=APIConstants.DEFAULT_MODEL, json_mode=True)
+        response = caller._call_api(json_mode=True)
         caller.conversation_manager.add_assistant_message(response)
         self.logger.info(f"第二步 API 响应长度: {len(response)} 字符")
 
