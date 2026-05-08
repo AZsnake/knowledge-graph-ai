@@ -3,7 +3,7 @@
 管线编排器 - 协调三大智能体，管理整体流程
 """
 
-from typing import List, Tuple
+from typing import Callable, List, Optional, Tuple
 import sys
 import os
 
@@ -24,7 +24,8 @@ class PipelineOrchestrator:
         self,
         api_key: str,
         api_endpoint: str,
-        material_text: str = None
+        material_text: str = None,
+        model: str = None,
     ):
         """
         初始化管线编排器
@@ -33,9 +34,10 @@ class PipelineOrchestrator:
             api_key: API密钥
             api_endpoint: API端点
             material_text: 教材文本
+            model: 使用的模型名称（None 则使用 APIConstants.DEFAULT_MODEL）
         """
         # 初始化基础设施
-        self.api_client = APIClient(api_key, api_endpoint)
+        self.api_client = APIClient(api_key, api_endpoint, model=model)
         self.logger = Logger("PipelineOrchestrator")
 
         # 初始化智能体（使用新的两步规划智能体）
@@ -60,7 +62,8 @@ class PipelineOrchestrator:
         material_toc: str,
         section_lengths: dict = None,
         max_iterations: int = 3,
-        max_workers: int = 4
+        max_workers: int = 4,
+        progress_callback: Optional[Callable[[str], None]] = None,
     ) -> Tuple[List[Node], List[Relation]]:
         """
         运行完整管线
@@ -70,32 +73,40 @@ class PipelineOrchestrator:
             section_lengths: 章节长度信息（可选）
             max_iterations: 最大迭代次数
             max_workers: 最大并发数
+            progress_callback: 可选回调，每个阶段完成后传入状态文本用于 UI 展示
 
         Returns:
             (节点列表, 关系列表)
         """
-        self.logger.info("=" * 80)
-        self.logger.info("开始知识图谱提取")
-        self.logger.info("=" * 80)
+        def _notify(msg: str):
+            self.logger.info(msg)
+            if progress_callback:
+                progress_callback(msg)
+
+        _notify("=" * 60)
+        _notify("开始知识图谱提取")
+        _notify("=" * 60)
 
         try:
             # 1. Planning阶段（使用两步规划）
-            self.logger.info("\n[Planning] 分析教材目录...")
+            _notify("[第一阶段] 分析教材目录，生成任务计划...")
             plan = self._run_planning(material_toc, section_lengths, max_workers)
+            subtask_count = len(plan.get("subtasks", []))
+            _notify(f"[第一阶段完成] 共生成 {subtask_count} 个提取任务")
 
             # 2. Generation & Evaluation阶段
-            self.logger.info("\n[Generation & Evaluation] 执行任务...")
+            _notify("[第二阶段] 生成与评估知识节点和关系...")
             nodes, relations = self._run_tasks(plan, max_iterations, max_workers)
+            _notify(f"[第二阶段完成] {len(nodes)} 个节点，{len(relations)} 条关系")
 
             # 3. 孤岛整合阶段
-            self.logger.info("\n[Island Integration] 整合孤岛...")
+            _notify("[第三阶段] 整合孤立子图...")
             nodes, relations = self._run_island_integration(nodes, relations, max_workers)
 
             # 完成
-            self.logger.info("\n" + "=" * 80)
-            self.logger.info("知识图谱提取完成")
-            self.logger.info(f"最终结果: {len(nodes)} 个节点, {len(relations)} 条关系")
-            self.logger.info("=" * 80)
+            _notify("=" * 60)
+            _notify(f"提取完成：{len(nodes)} 个节点，{len(relations)} 条关系")
+            _notify("=" * 60)
 
             return nodes, relations
 
